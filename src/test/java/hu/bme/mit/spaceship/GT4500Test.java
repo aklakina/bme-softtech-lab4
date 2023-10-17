@@ -28,7 +28,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.stream.Stream;
 
-public class GT4500Test {
+class GT4500Test {
 
   private GT4500 ship;
 
@@ -38,7 +38,7 @@ public class GT4500Test {
   }
 
   @Test
-  public void fireTorpedo_Single_Success(){
+  void fireTorpedo_Single_Success(){
     // Arrange
 
     // Act
@@ -49,7 +49,7 @@ public class GT4500Test {
   }
 
   @Test
-  public void fireTorpedo_All_Success(){
+  void fireTorpedo_All_Success(){
     // Arrange
 
     // Act
