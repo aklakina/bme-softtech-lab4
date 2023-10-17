@@ -2,13 +2,6 @@ package hu.bme.mit.spaceship;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.Arguments;
-import org.junit.jupiter.params.provider.MethodSource;
-import org.junit.jupiter.api.Assumptions;
-
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
@@ -16,17 +9,16 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.FileSystems;
-import java.nio.file.FileVisitResult;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.PathMatcher;
-import java.nio.file.Paths;
-import java.nio.file.SimpleFileVisitor;
-import java.nio.file.attribute.BasicFileAttributes;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.stream.Stream;
+
+import org.junit.jupiter.api.Assumptions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 
 public class GT4500Test {
 
@@ -92,24 +84,44 @@ public class GT4500Test {
   }
 
   private static Stream<Arguments> provideTestFiles() throws IOException {
-    PathMatcher matcher = FileSystems.getDefault().getPathMatcher("glob:**/input*");
-
-    Map<File, File> files = new HashMap<>(); // map of input-output files
-    Files.walkFileTree(Paths.get("test-data/"), new SimpleFileVisitor<Path>() {
-      @Override
-      public FileVisitResult visitFile(Path path, BasicFileAttributes attrs) throws IOException {
-        if (matcher.matches(path)) {
-          File in = path.toFile();
-          File out = Path.of(path.toString().replace("input", "output")).toFile();
-          files.put(in, out);
-        }
-        return FileVisitResult.CONTINUE;
-      }
-    });
-
-    return files.entrySet().stream().map((entry) -> Arguments.of(entry.getKey(), entry.getValue()));
+    final String rootFolderForTestInputsAndOutputs = "src/main/resources";
+    File resourceFolder = new File(rootFolderForTestInputsAndOutputs);
+    Map<File, File> files = provideFilesWithPrefix("input", "output", resourceFolder);
+    return files.entrySet().stream()
+        .map(it -> Arguments.of(
+            it.getKey(), it.getValue()));
   }
 
+  private static Map<File, File> provideFilesWithPrefix(String prefixOne, String prefixTwo, File root) throws IOException {
+    Map<File, File> filePairs = new LinkedHashMap<File, File>();
+    if (root.isDirectory()) {
+      File[] files = root.listFiles();
+      for (File file : files) {
+        if (file.isDirectory()) { // Recursion for directory
+          filePairs.putAll(
+              provideFilesWithPrefix(prefixOne, prefixTwo, file));
+        }
+        else { // File - we have to check it
+          String name = file.getName().trim();
+          if (name.startsWith(prefixOne)) { // Match - key
+            filePairs.put(file, null);
+          }
+          else if (name.startsWith(prefixTwo)) { // Match - value
+            String twoPostName = name.substring(prefixTwo.length());
+            // Searching for the key file
+            for (File key : filePairs.keySet()) {
+              String onePostName = key.getName().substring(prefixOne.length());
+              if (onePostName.equals(twoPostName)) {
+                filePairs.replace(key, file);
+              }
+            }
+          }
+        }
+      }
+    }
+    return filePairs;
+  }
+  
   /**
    * Utility method to force a test result to be 'inconclusive'.
    */
