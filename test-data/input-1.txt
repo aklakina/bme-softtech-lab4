@@ -1,4 +1,4 @@
-ship,3,0,1,0
+gt4500,3,0,1,0
 torpedo,ALL
 torpedo,SINGLE
 torpedo,SINGLE
